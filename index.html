@@ -2,57 +2,135 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>銀行・支店検索</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-    .form-group { margin-bottom: 15px; }
-    label { display: inline-block; width: 60px; font-weight: bold; }
-    select { padding: 6px; min-width: 200px; }
+    body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 10px; box-sizing: border-box; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+    input:disabled, select:disabled { background-color: #f0f0f0; cursor: not-allowed; }
+    .info-box { margin-top: 20px; padding: 15px; background-color: #eef9ff; border-left: 4px solid #007bff; display: none; }
   </style>
 </head>
 <body>
 
   <h1>銀行・支店コード検索</h1>
 
+  <!-- 1. 銀行選択（検索入力対応） -->
   <div class="form-group">
-    <label for="bank-select">銀行：</label>
-    <select id="bank-select">
-      <option value="">読み込み中...</option>
-    </select>
+    <label for="bank-input">1. 銀行名・コードを入力・選択</label>
+    <input type="text" id="bank-input" list="bank-list" placeholder="例: みずほ、0001" autocomplete="off">
+    <datalist id="bank-list"></datalist>
   </div>
 
+  <!-- 2. 支店選択 -->
   <div class="form-group">
-    <label for="branch-select">支店：</label>
+    <label for="branch-select">2. 支店を選択</label>
     <select id="branch-select" disabled>
       <option value="">まず銀行を選択してください</option>
     </select>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const bankSelect = document.getElementById('bank-select');
+  <!-- 選択結果表示エリア -->
+  <div id="result" class="info-box">
+    <h3>選択された口座情報</h3>
+    <p><strong>銀行：</strong> <span id="res-bank">-</span></p>
+    <p><strong>支店：</strong> <span id="res-branch">-</span></p>
+  </div>
 
-      // bank.json の読み込み
+  <script>
+    let bankData = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const bankInput = document.getElementById('bank-input');
+      const bankList = document.getElementById('bank-list');
+      const branchSelect = document.getElementById('branch-select');
+
+      // 1. bank.json の読み込み
       fetch('./bank.json')
-        .then(response => {
-          if (!response.ok) throw new Error('ネットワークエラー');
-          return response.json();
-        })
+        .then(res => res.json())
         .then(data => {
-          bankSelect.innerHTML = '<option value="">銀行を選択してください</option>';
-          
-          // データを取り出してドロップダウンに追加
+          bankData = data;
+          // datalist（予測候補リスト）に銀行を追加
           Object.keys(data).forEach(code => {
             const option = document.createElement('option');
-            option.value = code;
-            option.textContent = `${code} : ${data[code].name || data[code]}`;
-            bankSelect.appendChild(option);
+            const b = data[code];
+            // 表示形式例：「みずほ銀行 (0001) - ミズホ」
+            // ※かな検索用に name や kana 等が含まれる文字列を value にセットします
+            const bankName = b.name || b;
+            const bankKana = b.kana || b.hiragana || '';
+            option.value = `${code} : ${bankName} ${bankKana}`.trim();
+            bankList.appendChild(option);
           });
         })
-        .catch(error => {
-          console.error('読み込み失敗:', error);
-          bankSelect.innerHTML = '<option value="">読み込みに失敗しました</option>';
-        });
+        .catch(err => console.error('bank.json 読み込み失敗:', err));
+
+      // 銀行が入力・選択されたときの処理
+      bankInput.addEventListener('input', () => {
+        const val = bankInput.value;
+        // 入力値から4桁の銀行コードを抽出（先頭の4桁数字）
+        const match = val.match(/^(\d{4})/);
+        
+        if (match) {
+          const bankCode = match[1];
+          loadBranches(bankCode);
+        } else {
+          // 該当なしの場合は支店ドロップダウンをリセット・無効化
+          branchSelect.disabled = true;
+          branchSelect.innerHTML = '<option value="">まず銀行を選択してください</option>';
+          document.getElementById('result').style.display = 'none';
+        }
+      });
+
+      // 2. 支店データの読み込み処理
+      function loadBranches(bankCode) {
+        branchSelect.disabled = true;
+        branchSelect.innerHTML = '<option value="">支店データを読み込み中...</option>';
+
+        // 支店JSONのパス指定（直下に "0001.json" 等がある想定）
+        // ※もし "branches/0001.json" や "0001/branch.json" 等の場合は下のURLを変更してください
+        fetch(`./${bankCode}.json`)
+          .then(res => {
+            if (!res.ok) throw new Error('支店ファイルが見つかりません');
+            return res.json();
+          })
+          .then(branches => {
+            branchSelect.innerHTML = '<option value="">支店を選択してください</option>';
+            
+            // 支店データ（オブジェクトまたは配列）をループ処理
+            if (Array.isArray(branches)) {
+              branches.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.code;
+                opt.textContent = `${b.code} : ${b.name}`;
+                branchSelect.appendChild(opt);
+              });
+            } else {
+              Object.keys(branches).forEach(code => {
+                const opt = document.createElement('option');
+                opt.value = code;
+                const b = branches[code];
+                opt.textContent = `${code} : ${b.name || b}`;
+                branchSelect.appendChild(opt);
+              });
+            }
+            branchSelect.disabled = false; // 灰色（disabled）を解除！
+          })
+          .catch(err => {
+            console.error(err);
+            branchSelect.innerHTML = '<option value="">支店データの読み込みに失敗しました</option>';
+          });
+      }
+
+      // 支店が選択されたときの表示処理
+      branchSelect.addEventListener('change', () => {
+        if (branchSelect.value) {
+          document.getElementById('res-bank').textContent = bankInput.value;
+          document.getElementById('res-branch').textContent = branchSelect.options[branchSelect.selectedIndex].text;
+          document.getElementById('result').style.display = 'block';
+        }
+      });
     });
   </script>
 </body>
