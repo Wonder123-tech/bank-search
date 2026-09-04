@@ -5,47 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>銀行・支店検索</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+    body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; }
+    h1 { text-align: center; color: #333; font-size: 24px; }
+    .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
     .form-group { margin-bottom: 20px; }
-    label { display: block; font-weight: bold; margin-bottom: 5px; }
-    input, select { width: 100%; padding: 10px; box-sizing: border-box; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
-    input:disabled, select:disabled { background-color: #f0f0f0; cursor: not-allowed; }
-    .info-box { margin-top: 20px; padding: 15px; background-color: #eef9ff; border-left: 4px solid #007bff; display: none; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+    input { width: 100%; padding: 12px; box-sizing: border-box; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; transition: border-color 0.2s; }
+    input:focus { border-color: #007bff; outline: none; }
+    input:disabled { background-color: #e9ecef; cursor: not-allowed; }
+    
+    /* 選択結果カード表示 */
+    .result-card { background: #eef9ff; border: 2px solid #007bff; border-radius: 8px; padding: 20px; display: none; }
+    .result-card h3 { margin-top: 0; color: #007bff; border-bottom: 1px solid #b8daff; padding-bottom: 8px; font-size: 18px; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .result-item { background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #d0e8ff; }
+    .result-item span { display: block; font-size: 12px; color: #666; }
+    .result-item strong { font-size: 16px; color: #333; }
+
+    /* エラー表示 */
+    .error-msg { color: #dc3545; font-size: 13px; margin-top: 5px; display: none; }
   </style>
 </head>
 <body>
 
   <h1>銀行・支店コード検索</h1>
 
-  <!-- 1. 銀行選択（検索入力対応） -->
-  <div class="form-group">
-    <label for="bank-input">1. 銀行名・コードを入力・選択</label>
-    <input type="text" id="bank-input" list="bank-list" placeholder="例: みずほ、0001" autocomplete="off">
-    <datalist id="bank-list"></datalist>
+  <div class="card">
+    <div class="form-group">
+      <label for="bank-input">1. 銀行名・コードを入力（予測候補から選択）</label>
+      <input type="text" id="bank-input" list="bank-list" placeholder="例: みずほ、0001" autocomplete="off">
+      <datalist id="bank-list"></datalist>
+      <div id="bank-error" class="error-msg">※候補の中から正しい銀行を選択してください</div>
+    </div>
+
+    <div class="form-group">
+      <label for="branch-input">2. 支店名・コードを入力（予測候補から選択）</label>
+      <input type="text" id="branch-input" list="branch-list" placeholder="まず銀行を候補から選択してください" autocomplete="off" disabled>
+      <datalist id="branch-list"></datalist>
+      <div id="branch-error" class="error-msg">※候補の中から正しい支店を選択してください</div>
+    </div>
   </div>
 
-  <!-- 2. 支店選択 -->
-  <div class="form-group">
-    <label for="branch-select">2. 支店を選択</label>
-    <select id="branch-select" disabled>
-      <option value="">まず銀行を選択してください</option>
-    </select>
-  </div>
-
-  <!-- 選択結果表示エリア -->
-  <div id="result" class="info-box">
-    <h3>選択された口座情報</h3>
-    <p><strong>銀行：</strong> <span id="res-bank">-</span></p>
-    <p><strong>支店：</strong> <span id="res-branch">-</span></p>
+  <div id="result" class="result-card">
+    <h3>検索結果（確定情報）</h3>
+    <div class="result-grid">
+      <div class="result-item">
+        <span>銀行コード</span>
+        <strong id="res-bank-code">-</strong>
+      </div>
+      <div class="result-item">
+        <span>銀行名</span>
+        <strong id="res-bank-name">-</strong>
+      </div>
+      <div class="result-item">
+        <span>支店コード</span>
+        <strong id="res-branch-code">-</strong>
+      </div>
+      <div class="result-item">
+        <span>支店名</span>
+        <strong id="res-branch-name">-</strong>
+      </div>
+    </div>
   </div>
 
   <script>
-    let bankData = {};
+    let bankData = {};      // 銀行データ保持
+    let branchDataMap = {}; // 支店データ保持 (code -> name)
+    let selectedBank = null;
+    let selectedBranch = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       const bankInput = document.getElementById('bank-input');
       const bankList = document.getElementById('bank-list');
-      const branchSelect = document.getElementById('branch-select');
+      const bankError = document.getElementById('bank-error');
+
+      const branchInput = document.getElementById('branch-input');
+      const branchList = document.getElementById('branch-list');
+      const branchError = document.getElementById('branch-error');
 
       // 1. bank.json の読み込み
       fetch('./bank.json')
@@ -57,73 +93,121 @@
             const b = data[code];
             const bankName = b.name || b;
             const bankKana = b.kana || b.hiragana || '';
-            option.value = `${code} : ${bankName} ${bankKana}`.trim();
+            // 候補に表示するテキスト形式: [0001] みずほ銀行
+            option.value = `[${code}] ${bankName} ${bankKana}`.trim();
             bankList.appendChild(option);
           });
         })
         .catch(err => console.error('bank.json 読み込み失敗:', err));
 
-      // 銀行が入力・選択されたときの処理
+      // 銀行入力時のバリデーション＆支店データ読み込み
       bankInput.addEventListener('input', () => {
-        const val = bankInput.value;
-        const match = val.match(/^(\d{4})/);
-        
-        if (match) {
-          const bankCode = match[1];
-          loadBranches(bankCode);
+        const val = bankInput.value.trim();
+        bankError.style.display = 'none';
+        resetBranch();
+
+        if (!val) return;
+
+        // 入力値が datalist のどれかと完全一致しているか確認（不正入力防止）
+        const matchedOption = Array.from(bankList.options).find(opt => opt.value === val);
+
+        if (matchedOption) {
+          // 正規表現で [コード] と 銀行名 を抽出
+          const match = val.match(/^\[(\d{4})\]\s*([^\s]+)/);
+          if (match) {
+            selectedBank = { code: match[1], name: match[2] };
+            loadBranches(selectedBank.code);
+          }
         } else {
-          branchSelect.disabled = true;
-          branchSelect.innerHTML = '<option value="">まず銀行を選択してください</option>';
-          document.getElementById('result').style.display = 'none';
+          // 適当に入力された場合はエラー警告
+          selectedBank = null;
+          bankError.style.display = 'block';
         }
       });
 
-      // 2. 支店データの読み込み処理（branches フォルダ内を参照）
+      // 2. 支店データの読み込み処理
       function loadBranches(bankCode) {
-        branchSelect.disabled = true;
-        branchSelect.innerHTML = '<option value="">支店データを読み込み中...</option>';
+        branchInput.disabled = true;
+        branchInput.placeholder = '支店データを読み込み中...';
+        branchList.innerHTML = '';
+        branchDataMap = {};
 
-        // branches フォルダのパスを指定
         fetch(`./branches/${bankCode}.json`)
           .then(res => {
-            if (!res.ok) throw new Error('支店ファイルが見つかりません');
+            if (!res.ok) throw new Error('支店ファイルなし');
             return res.json();
           })
           .then(branches => {
-            branchSelect.innerHTML = '<option value="">支店を選択してください</option>';
-            
+            const processBranch = (code, name, kana) => {
+              const opt = document.createElement('option');
+              const bKana = kana || '';
+              opt.value = `[${code}] ${name} ${bKana}`.trim();
+              branchList.appendChild(opt);
+              branchDataMap[opt.value] = { code, name };
+            };
+
             if (Array.isArray(branches)) {
-              branches.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b.code;
-                opt.textContent = `${b.code} : ${b.name}`;
-                branchSelect.appendChild(opt);
-              });
+              branches.forEach(b => processBranch(b.code, b.name, b.kana || b.hiragana));
             } else {
               Object.keys(branches).forEach(code => {
-                const opt = document.createElement('option');
-                opt.value = code;
                 const b = branches[code];
-                opt.textContent = `${code} : ${b.name || b}`;
-                branchSelect.appendChild(opt);
+                processBranch(code, b.name || b, b.kana || b.hiragana);
               });
             }
-            branchSelect.disabled = false; // 灰色を解除
+
+            branchInput.disabled = false;
+            branchInput.placeholder = '例: 本店、001';
+            branchInput.focus();
           })
           .catch(err => {
             console.error(err);
-            branchSelect.innerHTML = '<option value="">支店データの読み込みに失敗しました</option>';
+            branchInput.placeholder = '支店データの読み込みに失敗しました';
           });
       }
 
-      // 支店選択時の表示
-      branchSelect.addEventListener('change', () => {
-        if (branchSelect.value) {
-          document.getElementById('res-bank').textContent = bankInput.value;
-          document.getElementById('res-branch').textContent = branchSelect.options[branchSelect.selectedIndex].text;
-          document.getElementById('result').style.display = 'block';
+      // 支店入力時のバリデーション＆結果表示
+      branchInput.addEventListener('input', () => {
+        const val = branchInput.value.trim();
+        branchError.style.display = 'none';
+        hideResult();
+
+        if (!val) return;
+
+        // datalist の選択肢と完全一致しているかチェック（不正入力防止）
+        if (branchDataMap[val]) {
+          selectedBranch = branchDataMap[val];
+          showResult();
+        } else {
+          selectedBranch = null;
+          branchError.style.display = 'block';
         }
       });
+
+      // 支店状態のリセット
+      function resetBranch() {
+        branchInput.value = '';
+        branchInput.disabled = true;
+        branchInput.placeholder = 'まず銀行を候補から選択してください';
+        branchList.innerHTML = '';
+        branchError.style.display = 'none';
+        selectedBranch = null;
+        hideResult();
+      }
+
+      // 結果表示
+      function showResult() {
+        if (selectedBank && selectedBranch) {
+          document.getElementById('res-bank-code').textContent = selectedBank.code;
+          document.getElementById('res-bank-name').textContent = selectedBank.name;
+          document.getElementById('res-branch-code').textContent = selectedBranch.code;
+          document.getElementById('res-branch-name').textContent = selectedBranch.name;
+          document.getElementById('result').style.display = 'block';
+        }
+      }
+
+      function hideResult() {
+        document.getElementById('result').style.display = 'none';
+      }
     });
   </script>
 </body>
