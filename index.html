@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>銀行・支店検索</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+    .form-group { margin-bottom: 15px; }
+    label { display: inline-block; width: 60px; font-weight: bold; }
+    select { padding: 6px; min-width: 200px; }
+  </style>
+</head>
+<body>
+
+  <h1>銀行・支店コード検索</h1>
+
+  <div class="form-group">
+    <label for="bank-select">銀行：</label>
+    <select id="bank-select">
+      <option value="">読み込み中...</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="branch-select">支店：</label>
+    <select id="branch-select" disabled>
+      <option value="">まず銀行を選択してください</option>
+    </select>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const bankSelect = document.getElementById('bank-select');
+
+      // bank.json の読み込み
+      fetch('./bank.json')
+        .then(response => {
+          if (!response.ok) throw new Error('ネットワークエラー');
+          return response.json();
+        })
+        .then(data => {
+          bankSelect.innerHTML = '<option value="">銀行を選択してください</option>';
+          
+          // データを取り出してドロップダウンに追加
+          Object.keys(data).forEach(code => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = `${code} : ${data[code].name || data[code]}`;
+            bankSelect.appendChild(option);
+          });
+        })
+        .catch(error => {
+          console.error('読み込み失敗:', error);
+          bankSelect.innerHTML = '<option value="">読み込みに失敗しました</option>';
+        });
+    });
+  </script>
+</body>
+</html>
