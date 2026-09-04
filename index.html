@@ -33,24 +33,24 @@
   <div class="card">
     <!-- 1. 銀行選択 -->
     <div class="form-group">
-      <label for="bank-input">1. 銀行名・ひらがな・コードを入力</label>
-      <input type="text" id="bank-input" list="bank-list" placeholder="例: ど、だ、0001" autocomplete="off">
+      <label for="bank-input">銀行名・コード</label>
+      <input type="text" id="bank-input" list="bank-list" placeholder="銀行名またはコードを入力" autocomplete="off">
       <datalist id="bank-list"></datalist>
-      <div id="bank-error" class="error-msg">※一覧の候補から正しい銀行を選択してください</div>
+      <div id="bank-error" class="error-msg">※候補の中から正しい銀行を選択してください</div>
     </div>
 
     <!-- 2. 支店選択 -->
     <div class="form-group">
-      <label for="branch-input">2. 支店名・ひらがな・コードを入力</label>
-      <input type="text" id="branch-input" list="branch-list" placeholder="まず銀行を候補から選択してください" autocomplete="off" disabled>
+      <label for="branch-input">支店名・コード</label>
+      <input type="text" id="branch-input" list="branch-list" placeholder="まず銀行を選択してください" autocomplete="off" disabled>
       <datalist id="branch-list"></datalist>
-      <div id="branch-error" class="error-msg">※一覧の候補から正しい支店を選択してください</div>
+      <div id="branch-error" class="error-msg">※候補の中から正しい支店を選択してください</div>
     </div>
   </div>
 
   <!-- 3. 結果表示 -->
   <div id="result" class="result-card">
-    <h3>検索結果（確定情報）</h3>
+    <h3>検索結果</h3>
     <div class="result-grid">
       <div class="result-item">
         <span>銀行コード</span>
@@ -72,17 +72,22 @@
   </div>
 
   <script>
-    let rawBankList = [];     // 銀行データ配列 [{ code, name, kana, hira }]
-    let rawBranchList = [];   // 支店データ配列 [{ code, name, kana, hira }]
+    let rawBankList = [];     // 銀行データ配列
+    let rawBranchList = [];   // 支店データ配列
     let selectedBank = null;
     let selectedBranch = null;
 
-    // ひらがな・カタカナ相互変換関数
+    // カタカナ・ひらがな全角半角の相互変換・正規化ユーティリティ
     function kataToHira(str) {
       return (str || '').replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
     }
     function hiraToKata(str) {
       return (str || '').replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60));
+    }
+    function normalizeStr(str) {
+      return (str || '')
+        .normalize('NFKC') // 半角カナ等を全角に統一
+        .toLowerCase();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -101,39 +106,46 @@
           rawBankList = Object.keys(data).map(code => {
             const b = data[code];
             const name = b.name || b;
-            const kana = b.kana || b.hiragana || '';
-            const hira = kataToHira(kana);
-            return { code, name, kana, hira };
+            const kana = b.kana || b.hiragana || name; // かな無ければ名前をそのまま代用
+            
+            const normName = normalizeStr(name);
+            const normKana = normalizeStr(kana);
+            const normHira = kataToHira(normKana);
+            const normKata = hiraToKata(normKana);
+
+            return { code, name, kana, normName, normKana, normHira, normKata };
           });
           updateBankDatalist('');
         })
         .catch(err => console.error('bank.json 読み込み失敗:', err));
 
-      // 銀行 datalist 動的生成
+      // 銀行 datalist フィルタリング表示
       function updateBankDatalist(keyword) {
         bankList.innerHTML = '';
-        const k = keyword.trim().toLowerCase();
-        const kKata = hiraToKata(k);
-        const kHira = kataToHira(k);
+        const normK = normalizeStr(keyword);
+        if (!normK) return; // 未入力時は無駄なリスト表示を省略
+
+        const kHira = kataToHira(normK);
+        const kKata = hiraToKata(normK);
 
         const filtered = rawBankList.filter(b => {
-          if (!k) return true;
-          return b.name.includes(k) ||
-                 b.code.startsWith(k) ||
-                 b.kana.includes(kKata) ||
-                 b.hira.includes(kHira);
+          return b.normName.includes(normK) ||
+                 b.code.startsWith(normK) ||
+                 b.normKana.includes(kKata) ||
+                 b.normHira.includes(kHira) ||
+                 b.normName.includes(kHira) ||
+                 b.normName.includes(kKata);
         });
 
-        // 最大50件に制限（動作軽量化）
-        filtered.slice(0, 50).forEach(b => {
+        filtered.slice(0, 30).forEach(b => {
           const option = document.createElement('option');
           option.value = b.name;
-          option.label = `[${b.code}] ${b.kana || b.hira}`;
+          option.label = `[${b.code}] ${b.kana !== b.name ? b.kana : ''}`.trim();
           bankList.appendChild(option);
         });
       }
 
-      // 銀行入力処理
+      // 銀行入力時の処理
       bankInput.addEventListener('input', () => {
         const val = bankInput.value.trim();
         bankError.style.display = 'none';
@@ -143,11 +155,11 @@
 
         if (!val) return;
 
-        // 完全一致チェック
+        // ドロップダウンからの完全一致、またはコード一致チェック
         const match = rawBankList.find(b => b.name === val || b.code === val);
         if (match) {
           selectedBank = match;
-          bankInput.value = match.name; // コード入力の場合も正式名称に補正
+          bankInput.value = match.name;
           loadBranches(match.code);
         } else {
           selectedBank = null;
@@ -169,8 +181,17 @@
           })
           .then(branches => {
             const parseBranch = (code, name, kana) => {
-              const k = kana || '';
-              return { code, name, kana: k, hira: kataToHira(k) };
+              const k = kana || name;
+              const normName = normalizeStr(name);
+              const normKana = normalizeStr(k);
+              return {
+                code,
+                name,
+                normName,
+                normKana,
+                normHira: kataToHira(normKana),
+                normKata: hiraToKata(normKana)
+              };
             };
 
             if (Array.isArray(branches)) {
@@ -182,9 +203,8 @@
               });
             }
 
-            updateBranchDatalist('');
             branchInput.disabled = false;
-            branchInput.placeholder = '例: ほん、001';
+            branchInput.placeholder = '支店名またはコードを入力';
             branchInput.focus();
           })
           .catch(err => {
@@ -193,30 +213,33 @@
           });
       }
 
-      // 支店 datalist 動的生成
+      // 支店 datalist フィルタリング表示
       function updateBranchDatalist(keyword) {
         branchList.innerHTML = '';
-        const k = keyword.trim().toLowerCase();
-        const kKata = hiraToKata(k);
-        const kHira = kataToHira(k);
+        const normK = normalizeStr(keyword);
+        if (!normK) return;
+
+        const kHira = kataToHira(normK);
+        const kKata = hiraToKata(normK);
 
         const filtered = rawBranchList.filter(b => {
-          if (!k) return true;
-          return b.name.includes(k) ||
-                 b.code.startsWith(k) ||
-                 b.kana.includes(kKata) ||
-                 b.hira.includes(kHira);
+          return b.normName.includes(normK) ||
+                 b.code.startsWith(normK) ||
+                 b.normKana.includes(kKata) ||
+                 b.normHira.includes(kHira) ||
+                 b.normName.includes(kHira) ||
+                 b.normName.includes(kKata);
         });
 
-        filtered.slice(0, 50).forEach(b => {
+        filtered.slice(0, 30).forEach(b => {
           const option = document.createElement('option');
           option.value = b.name;
-          option.label = `[${b.code}] ${b.kana || b.hira}`;
+          option.label = `[${b.code}] ${b.normKana !== b.normName ? b.normKana : ''}`.trim();
           branchList.appendChild(option);
         });
       }
 
-      // 支店入力処理
+      // 支店入力時の処理
       branchInput.addEventListener('input', () => {
         const val = branchInput.value.trim();
         branchError.style.display = 'none';
@@ -241,7 +264,7 @@
       function resetBranch() {
         branchInput.value = '';
         branchInput.disabled = true;
-        branchInput.placeholder = 'まず銀行を候補から選択してください';
+        branchInput.placeholder = 'まず銀行を選択してください';
         branchList.innerHTML = '';
         branchError.style.display = 'none';
         selectedBranch = null;
