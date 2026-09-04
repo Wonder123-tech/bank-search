@@ -33,18 +33,18 @@
   <div class="card">
     <!-- 1. 銀行選択 -->
     <div class="form-group">
-      <label for="bank-input">1. 銀行名・コードを入力（予測候補から選択）</label>
-      <input type="text" id="bank-input" list="bank-list" placeholder="例: みずほ、0001" autocomplete="off">
+      <label for="bank-input">1. 銀行名・ひらがな・コードを入力</label>
+      <input type="text" id="bank-input" list="bank-list" placeholder="例: ど、だ、0001" autocomplete="off">
       <datalist id="bank-list"></datalist>
-      <div id="bank-error" class="error-msg">※候補の中から正しい銀行を選択してください</div>
+      <div id="bank-error" class="error-msg">※一覧の候補から正しい銀行を選択してください</div>
     </div>
 
     <!-- 2. 支店選択 -->
     <div class="form-group">
-      <label for="branch-input">2. 支店名・コードを入力（予測候補から選択）</label>
+      <label for="branch-input">2. 支店名・ひらがな・コードを入力</label>
       <input type="text" id="branch-input" list="branch-list" placeholder="まず銀行を候補から選択してください" autocomplete="off" disabled>
       <datalist id="branch-list"></datalist>
-      <div id="branch-error" class="error-msg">※候補の中から正しい支店を選択してください</div>
+      <div id="branch-error" class="error-msg">※一覧の候補から正しい支店を選択してください</div>
     </div>
   </div>
 
@@ -72,10 +72,18 @@
   </div>
 
   <script>
-    let bankOptionsMap = {};   // 銀行候補の照合用マップ (表示用文字列 -> { code, name })
-    let branchOptionsMap = {}; // 支店候補の照合用マップ (表示用文字列 -> { code, name })
+    let rawBankList = [];     // 銀行データ配列 [{ code, name, kana, hira }]
+    let rawBranchList = [];   // 支店データ配列 [{ code, name, kana, hira }]
     let selectedBank = null;
     let selectedBranch = null;
+
+    // ひらがな・カタカナ相互変換関数
+    function kataToHira(str) {
+      return (str || '').replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
+    }
+    function hiraToKata(str) {
+      return (str || '').replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60));
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       const bankInput = document.getElementById('bank-input');
@@ -90,59 +98,69 @@
       fetch('./bank.json')
         .then(res => res.json())
         .then(data => {
-          Object.keys(data).forEach(code => {
+          rawBankList = Object.keys(data).map(code => {
             const b = data[code];
-            const bankName = b.name || b;
-            const bankKana = b.kana || b.hiragana || '';
-            
-            // 入力欄にセットするきれいな名前（例: "みずほ銀行"）
-            const displayValue = bankName;
-            
-            // 予測ドロップダウンの項目（HTML5 datalist では label プロパティで検索用キーワードを指定できます）
-            const option = document.createElement('option');
-            option.value = displayValue;
-            // 予測候補の横にコードやカナを表示して検索しやすくする設定
-            option.label = `${code} / ${bankKana}`;
-            bankList.appendChild(option);
-
-            // 選択時の判定用にマップへ記憶
-            bankOptionsMap[displayValue] = { code, name: bankName };
+            const name = b.name || b;
+            const kana = b.kana || b.hiragana || '';
+            const hira = kataToHira(kana);
+            return { code, name, kana, hira };
           });
+          updateBankDatalist('');
         })
         .catch(err => console.error('bank.json 読み込み失敗:', err));
 
-      // 銀行入力時の処理
+      // 銀行 datalist 動的生成
+      function updateBankDatalist(keyword) {
+        bankList.innerHTML = '';
+        const k = keyword.trim().toLowerCase();
+        const kKata = hiraToKata(k);
+        const kHira = kataToHira(k);
+
+        const filtered = rawBankList.filter(b => {
+          if (!k) return true;
+          return b.name.includes(k) ||
+                 b.code.startsWith(k) ||
+                 b.kana.includes(kKata) ||
+                 b.hira.includes(kHira);
+        });
+
+        // 最大50件に制限（動作軽量化）
+        filtered.slice(0, 50).forEach(b => {
+          const option = document.createElement('option');
+          option.value = b.name;
+          option.label = `[${b.code}] ${b.kana || b.hira}`;
+          bankList.appendChild(option);
+        });
+      }
+
+      // 銀行入力処理
       bankInput.addEventListener('input', () => {
         const val = bankInput.value.trim();
         bankError.style.display = 'none';
         resetBranch();
 
+        updateBankDatalist(val);
+
         if (!val) return;
 
-        // 入力値が候補と完全一致（正しく選ばれた）かチェック
-        if (bankOptionsMap[val]) {
-          selectedBank = bankOptionsMap[val];
-          loadBranches(selectedBank.code);
+        // 完全一致チェック
+        const match = rawBankList.find(b => b.name === val || b.code === val);
+        if (match) {
+          selectedBank = match;
+          bankInput.value = match.name; // コード入力の場合も正式名称に補正
+          loadBranches(match.code);
         } else {
-          // コード（例: 0001）で入力された場合も自動で対応
-          const foundByCode = Object.values(bankOptionsMap).find(b => b.code === val);
-          if (foundByCode) {
-            selectedBank = foundByCode;
-            bankInput.value = foundByCode.name; // 入力欄をきれいな銀行名に補正
-            loadBranches(selectedBank.code);
-          } else {
-            selectedBank = null;
-            bankError.style.display = 'block';
-          }
+          selectedBank = null;
+          bankError.style.display = 'block';
         }
       });
 
-      // 2. 支店データの読み込み処理
+      // 2. 支店データ読み込み
       function loadBranches(bankCode) {
         branchInput.disabled = true;
         branchInput.placeholder = '支店データを読み込み中...';
         branchList.innerHTML = '';
-        branchOptionsMap = {};
+        rawBranchList = [];
 
         fetch(`./branches/${bankCode}.json`)
           .then(res => {
@@ -150,29 +168,23 @@
             return res.json();
           })
           .then(branches => {
-            const addBranchOption = (code, name, kana) => {
-              const bName = name;
-              const bKana = kana || '';
-
-              const option = document.createElement('option');
-              option.value = bName;
-              option.label = `${code} / ${bKana}`;
-              branchList.appendChild(option);
-
-              branchOptionsMap[bName] = { code, name: bName };
+            const parseBranch = (code, name, kana) => {
+              const k = kana || '';
+              return { code, name, kana: k, hira: kataToHira(k) };
             };
 
             if (Array.isArray(branches)) {
-              branches.forEach(b => addBranchOption(b.code, b.name, b.kana || b.hiragana));
+              rawBranchList = branches.map(b => parseBranch(b.code, b.name, b.kana || b.hiragana));
             } else {
-              Object.keys(branches).forEach(code => {
+              rawBranchList = Object.keys(branches).map(code => {
                 const b = branches[code];
-                addBranchOption(code, b.name || b, b.kana || b.hiragana);
+                return parseBranch(code, b.name || b, b.kana || b.hiragana);
               });
             }
 
+            updateBranchDatalist('');
             branchInput.disabled = false;
-            branchInput.placeholder = '例: 本店';
+            branchInput.placeholder = '例: ほん、001';
             branchInput.focus();
           })
           .catch(err => {
@@ -181,32 +193,51 @@
           });
       }
 
-      // 支店入力時の処理
+      // 支店 datalist 動的生成
+      function updateBranchDatalist(keyword) {
+        branchList.innerHTML = '';
+        const k = keyword.trim().toLowerCase();
+        const kKata = hiraToKata(k);
+        const kHira = kataToHira(k);
+
+        const filtered = rawBranchList.filter(b => {
+          if (!k) return true;
+          return b.name.includes(k) ||
+                 b.code.startsWith(k) ||
+                 b.kana.includes(kKata) ||
+                 b.hira.includes(kHira);
+        });
+
+        filtered.slice(0, 50).forEach(b => {
+          const option = document.createElement('option');
+          option.value = b.name;
+          option.label = `[${b.code}] ${b.kana || b.hira}`;
+          branchList.appendChild(option);
+        });
+      }
+
+      // 支店入力処理
       branchInput.addEventListener('input', () => {
         const val = branchInput.value.trim();
         branchError.style.display = 'none';
         hideResult();
 
+        updateBranchDatalist(val);
+
         if (!val) return;
 
-        if (branchOptionsMap[val]) {
-          selectedBranch = branchOptionsMap[val];
+        const match = rawBranchList.find(b => b.name === val || b.code === val);
+        if (match) {
+          selectedBranch = match;
+          branchInput.value = match.name;
           showResult();
         } else {
-          // 支店コード直接入力時の自動補正
-          const foundByCode = Object.values(branchOptionsMap).find(b => b.code === val);
-          if (foundByCode) {
-            selectedBranch = foundByCode;
-            branchInput.value = foundByCode.name;
-            showResult();
-          } else {
-            selectedBranch = null;
-            branchError.style.display = 'block';
-          }
+          selectedBranch = null;
+          branchError.style.display = 'block';
         }
       });
 
-      // 支店リセット
+      // リセット＆結果表示
       function resetBranch() {
         branchInput.value = '';
         branchInput.disabled = true;
@@ -217,7 +248,6 @@
         hideResult();
       }
 
-      // 結果表示
       function showResult() {
         if (selectedBank && selectedBranch) {
           document.getElementById('res-bank-code').textContent = selectedBank.code;
