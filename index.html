@@ -52,12 +52,9 @@
         .then(res => res.json())
         .then(data => {
           bankData = data;
-          // datalist（予測候補リスト）に銀行を追加
           Object.keys(data).forEach(code => {
             const option = document.createElement('option');
             const b = data[code];
-            // 表示形式例：「みずほ銀行 (0001) - ミズホ」
-            // ※かな検索用に name や kana 等が含まれる文字列を value にセットします
             const bankName = b.name || b;
             const bankKana = b.kana || b.hiragana || '';
             option.value = `${code} : ${bankName} ${bankKana}`.trim();
@@ -69,28 +66,25 @@
       // 銀行が入力・選択されたときの処理
       bankInput.addEventListener('input', () => {
         const val = bankInput.value;
-        // 入力値から4桁の銀行コードを抽出（先頭の4桁数字）
         const match = val.match(/^(\d{4})/);
         
         if (match) {
           const bankCode = match[1];
           loadBranches(bankCode);
         } else {
-          // 該当なしの場合は支店ドロップダウンをリセット・無効化
           branchSelect.disabled = true;
           branchSelect.innerHTML = '<option value="">まず銀行を選択してください</option>';
           document.getElementById('result').style.display = 'none';
         }
       });
 
-      // 2. 支店データの読み込み処理
+      // 2. 支店データの読み込み処理（branches フォルダ内を参照）
       function loadBranches(bankCode) {
         branchSelect.disabled = true;
         branchSelect.innerHTML = '<option value="">支店データを読み込み中...</option>';
 
-        // 支店JSONのパス指定（直下に "0001.json" 等がある想定）
-        // ※もし "branches/0001.json" や "0001/branch.json" 等の場合は下のURLを変更してください
-        fetch(`./${bankCode}.json`)
+        // branches フォルダのパスを指定
+        fetch(`./branches/${bankCode}.json`)
           .then(res => {
             if (!res.ok) throw new Error('支店ファイルが見つかりません');
             return res.json();
@@ -98,7 +92,6 @@
           .then(branches => {
             branchSelect.innerHTML = '<option value="">支店を選択してください</option>';
             
-            // 支店データ（オブジェクトまたは配列）をループ処理
             if (Array.isArray(branches)) {
               branches.forEach(b => {
                 const opt = document.createElement('option');
@@ -115,7 +108,7 @@
                 branchSelect.appendChild(opt);
               });
             }
-            branchSelect.disabled = false; // 灰色（disabled）を解除！
+            branchSelect.disabled = false; // 灰色を解除
           })
           .catch(err => {
             console.error(err);
@@ -123,7 +116,7 @@
           });
       }
 
-      // 支店が選択されたときの表示処理
+      // 支店選択時の表示
       branchSelect.addEventListener('change', () => {
         if (branchSelect.value) {
           document.getElementById('res-bank').textContent = bankInput.value;
