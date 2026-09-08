@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="google-site-verification" content="<meta name="google-site-verification" content="s1u8ob3WykuQUy7j7XGKPgYAJDuOwwu6IfIynq5mPyQ" />" />
+
+  <!-- Google Search Console 所有権確認用メタタグ -->
+  <meta name="google-site-verification" content="s1u8ob3WykuQUy7j7XGKPgYAJDuOwwu6IfIynq5mPyQ" />
+
   <title>銀行・支店コード検索</title>
   <!-- タブのファビコン設定（logo.png を指定） -->
   <link rel="icon" href="./logo.png" type="image/png">
@@ -36,7 +39,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* 1. 高品位グラデーションヘッダー（高さ固定＆絶対配置の基準に設定） */
+    /* 1. 高品位グラデーションヘッダー */
     .header {
       background: var(--accent-gradient);
       color: #ffffff;
@@ -44,8 +47,8 @@
       border-bottom-left-radius: 20px;
       border-bottom-right-radius: 20px;
       box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25);
-      position: relative; /* ロゴの絶対配置の基準 */
-      overflow: hidden;   /* 青いエリアからはみ出さないようカット */
+      position: relative;
+      overflow: hidden;
     }
 
     .header-inner {
@@ -56,8 +59,8 @@
     }
 
     .header-content {
-      text-align: center; /* PC標準は中央寄せ */
-      padding-right: 110px; /* 右側の大きなロゴと被らないように余白確保 */
+      text-align: center;
+      padding-right: 110px;
       padding-left: 110px;
     }
 
@@ -92,9 +95,9 @@
     /* 右下ギリギリに固定配置する特大ロゴ */
     .header-logo-img {
       position: absolute;
-      bottom: 0px;      /* 青いエリアの最下部ギリギリに設置 */
-      right: 12px;      /* 右端からの余白 */
-      width: 130px;     /* ロゴを特大サイズに変更 */
+      bottom: 0px;
+      right: 12px;
+      width: 130px;
       height: 110px;
       object-fit: contain;
       display: block;
@@ -109,7 +112,7 @@
       .header-content {
         text-align: left;
         padding-left: 4px;
-        padding-right: 120px; /* ロゴと文字の重なりを防止 */
+        padding-right: 120px;
       }
     }
 
