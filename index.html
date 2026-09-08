@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>銀行・支店コード検索</title>
+  <!-- タブのファビコン設定（logo.png を指定） -->
   <link rel="icon" href="./logo.png" type="image/png">
+  
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,29 +39,25 @@
     .header {
       background: var(--accent-gradient);
       color: #ffffff;
-      padding: 20px 20px 28px;
+      padding: 20px 16px 28px;
       border-bottom-left-radius: 20px;
       border-bottom-right-radius: 20px;
       box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25);
       position: relative;
     }
 
-    .header-logo-img {
-      width: 44px;
-      height: 44px;
-      object-fit: contain;
-      display: block;
-
-      /* 左に7度傾ける */
-      transform: rotate(-7deg);
-
-      /* 下に向かってふんわり消えるグラデーションぼかし（透過） */
-      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
-      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
+    /* 3カラム構成（左:空き / 中央:タイトルと更新日 / 右:ロゴ） */
+    .header-inner {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 4px;
+      display: grid;
+      grid-template-columns: 44px 1fr 44px; /* 左右の幅を揃えて中央を完全中心にする */
+      align-items: center;
     }
 
     .header-content {
-      text-align: left;
+      text-align: center; /* タイトル・サブ・更新日を中央揃え */
     }
 
     .header-title {
@@ -76,33 +74,34 @@
       font-weight: 400;
     }
 
-    /* 右側エリア（更新日 ＋ ロゴ） */
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
-
-    /* 右上の最終更新日バッジ */
+    /* 中央に配置する更新日バッジ */
     .update-badge {
+      display: inline-block;
       font-size: 11px;
       background: rgba(255, 255, 255, 0.15);
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255, 255, 255, 0.25);
       color: #ffffff;
-      padding: 4px 10px;
+      padding: 3px 10px;
       border-radius: 20px;
-      white-space: nowrap;
+      margin-top: 8px;
       font-weight: 500;
     }
 
-    /* ロゴ画像（装飾なし・通常表示） */
+    /* 右端に配置するロゴ（左7度傾け ＋ 下部グラデーションぼかし） */
+    .header-right {
+      display: flex;
+      justify-content: flex-end;
+    }
+
     .header-logo-img {
       width: 44px;
       height: 44px;
       object-fit: contain;
       display: block;
+      transform: rotate(-7deg);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
     }
 
     /* メインコンテンツエリア */
@@ -286,15 +285,21 @@
 </head>
 <body>
 
-  <!-- 上部ヘッダー（更新日の直下に通常表示ロゴ） -->
+  <!-- 上部ヘッダー -->
   <header class="header">
     <div class="header-inner">
+      <!-- 左側（中央揃えのバランス調整用スペース） -->
+      <div></div>
+
+      <!-- 中央（タイトル・サブ・更新日） -->
       <div class="header-content">
         <h1 class="header-title">銀行・支店コード検索</h1>
         <div class="header-sub">金融機関コード・支店番号を検索</div>
-      </div>
-      <div class="header-right">
         <div class="update-badge">更新日: 2026.09.08</div>
+      </div>
+
+      <!-- 右端（ロゴ） -->
+      <div class="header-right">
         <img src="./logo.png" alt="Logo" class="header-logo-img">
       </div>
     </div>
