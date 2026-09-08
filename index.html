@@ -35,29 +35,30 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* 1. 高品位グラデーションヘッダー */
+    /* 1. 高品位グラデーションヘッダー（高さやパディングを固定） */
     .header {
       background: var(--accent-gradient);
       color: #ffffff;
-      padding: 20px 16px 28px;
+      padding: 20px 16px 20px; /* パディングで上下サイズを固定 */
       border-bottom-left-radius: 20px;
       border-bottom-right-radius: 20px;
       box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25);
       position: relative;
+      overflow: hidden; /* ロゴがはみ出るのを防止 */
     }
 
-    /* PC・タブレット等（基本）：中央揃え＋右端ロゴ（ロゴ幅85pxに合わせて調整） */
+    /* 内部レイアウト（下揃えで整列） */
     .header-inner {
       max-width: 100%;
       margin: 0 auto;
       padding: 0 4px;
       display: grid;
-      grid-template-columns: 85px 1fr 85px; /* 左右幅を85pxに設定 */
-      align-items: center;
+      grid-template-columns: 85px 1fr 85px;
+      align-items: flex-end; /* 下基準に配置 */
     }
 
     .header-content {
-      text-align: center; /* 基本は中央揃え */
+      text-align: center;
     }
 
     .header-title {
@@ -88,18 +89,21 @@
       font-weight: 500;
     }
 
-    /* 右端配置のロゴ（85pxに拡大） */
+    /* 右端配置（下ギリギリに配置＆上部に1/4程度のスペースを確保） */
     .header-right {
       display: flex;
       justify-content: flex-end;
+      align-items: flex-end; /* 下ギリギリに接着 */
+      height: 100%;
     }
 
     .header-logo-img {
-      width: 95px;
-      height: 95px;
+      width: 85px;
+      height: 70px; /* 高さを調整して上部に約1/4の余白を作成 */
       object-fit: contain;
       display: block;
       transform: rotate(-7deg);
+      margin-bottom: -5px; /* 下ギリギリに寄せる調整 */
       -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
       mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
     }
@@ -107,13 +111,13 @@
     /* スマホ表示時（画面幅 480px 以下）のテキスト左寄せ対応 */
     @media (max-width: 480px) {
       .header-inner {
-        grid-template-columns: 1fr 85px; /* 左側ダミーを解除して文字エリアを確保 */
+        grid-template-columns: 1fr 85px;
       }
       .header-inner > div:first-child {
-        display: none; /* バランス調整用ダミー要素を非表示 */
+        display: none;
       }
       .header-content {
-        text-align: left; /* スマホのみ文字を左寄せ */
+        text-align: left;
         padding-left: 4px;
       }
     }
@@ -302,7 +306,7 @@
   <!-- 上部ヘッダー -->
   <header class="header">
     <div class="header-inner">
-      <!-- PC用バランス調整スペース（スマホ時はCSSで非表示） -->
+      <!-- PC用バランス調整スペース -->
       <div></div>
 
       <!-- タイトル・サブ・更新日 -->
@@ -312,7 +316,7 @@
         <div class="update-badge">更新日: 2026.09.08</div>
       </div>
 
-      <!-- 右端（ロゴ） -->
+      <!-- 右端（ロゴ・下寄せ配置） -->
       <div class="header-right">
         <img src="./logo.png" alt="Logo" class="header-logo-img">
       </div>
