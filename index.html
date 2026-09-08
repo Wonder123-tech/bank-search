@@ -46,18 +46,18 @@
       position: relative;
     }
 
-    /* 3カラム構成（ロゴサイズに合わせて左右幅を75pxに調整） */
+    /* PC・タブレット等（基本）：中央揃え＋右端ロゴ（ロゴ幅85pxに合わせて調整） */
     .header-inner {
       max-width: 100%;
       margin: 0 auto;
       padding: 0 4px;
       display: grid;
-      grid-template-columns: 75px 1fr 75px; /* 左右の幅をロゴに合わせて75pxで均等配置 */
+      grid-template-columns: 85px 1fr 85px; /* 左右幅を85pxに設定 */
       align-items: center;
     }
 
     .header-content {
-      text-align: center; /* タイトル・サブ・更新日を中央揃え */
+      text-align: center; /* 基本は中央揃え */
     }
 
     .header-title {
@@ -74,7 +74,7 @@
       font-weight: 400;
     }
 
-    /* 中央に配置する更新日バッジ */
+    /* 更新日バッジ */
     .update-badge {
       display: inline-block;
       font-size: 11px;
@@ -88,20 +88,34 @@
       font-weight: 500;
     }
 
-    /* 右端に配置するロゴ（サイズ約1.7倍: 75px） */
+    /* 右端配置のロゴ（85pxに拡大） */
     .header-right {
       display: flex;
       justify-content: flex-end;
     }
 
     .header-logo-img {
-      width: 75px;  /* 44px * 1.7 ≒ 75px */
-      height: 75px;
+      width: 85px;
+      height: 85px;
       object-fit: contain;
       display: block;
       transform: rotate(-7deg);
       -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
       mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
+    }
+
+    /* スマホ表示時（画面幅 480px 以下）のテキスト左寄せ対応 */
+    @media (max-width: 480px) {
+      .header-inner {
+        grid-template-columns: 1fr 85px; /* 左側ダミーを解除して文字エリアを確保 */
+      }
+      .header-inner > div:first-child {
+        display: none; /* バランス調整用ダミー要素を非表示 */
+      }
+      .header-content {
+        text-align: left; /* スマホのみ文字を左寄せ */
+        padding-left: 4px;
+      }
     }
 
     /* メインコンテンツエリア */
@@ -288,10 +302,10 @@
   <!-- 上部ヘッダー -->
   <header class="header">
     <div class="header-inner">
-      <!-- 左側（中央揃えのバランス調整用スペース） -->
+      <!-- PC用バランス調整スペース（スマホ時はCSSで非表示） -->
       <div></div>
 
-      <!-- 中央（タイトル・サブ・更新日） -->
+      <!-- タイトル・サブ・更新日 -->
       <div class="header-content">
         <h1 class="header-title">銀行・支店コード検索</h1>
         <div class="header-sub">金融機関コード・支店番号を検索</div>
