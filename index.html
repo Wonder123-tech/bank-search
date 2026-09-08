@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Bank Finder - 銀行・支店コード検索</title>
-  <!-- Google Fonts: 高品質フォントの読み込み -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -48,7 +48,6 @@
       gap: 10px; margin-bottom: 6px;
     }
 
-    /* ロゴマーク (SVGアイコン) */
     .logo-icon {
       width: 28px; height: 28px; fill: #ffffff;
     }
@@ -68,7 +67,7 @@
       flex: 1;
       padding: 0 16px 30px;
       max-width: 460px; width: 100%;
-      margin: -20px auto 0; /* ヘッダーに少し重ねてカード感を強調 */
+      margin: -20px auto 0;
     }
 
     /* カードデザイン */
@@ -95,7 +94,7 @@
       width: 16px; height: 16px; fill: var(--accent);
     }
 
-    /* スマホで打ちやすい洗練された入力フォーム */
+    /* 入力フォーム */
     input {
       width: 100%; padding: 14px 16px;
       font-size: 16px;
@@ -174,6 +173,20 @@
     .result-item {
       background: #f8fafc; padding: 12px;
       border-radius: 10px; border: 1px solid #f1f5f9; text-align: center;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    /* タップ可能なコピー対象カード */
+    .result-item.copyable {
+      cursor: pointer;
+      border: 1px solid #dbeafe;
+      background: #f0f7ff;
+    }
+
+    .result-item.copyable:active {
+      transform: scale(0.97);
+      background-color: #dbeafe;
     }
 
     .result-item span {
@@ -185,8 +198,40 @@
       font-size: 15px; color: var(--text-main); font-weight: 700; word-break: break-all;
     }
 
+    .copy-badge {
+      display: inline-block;
+      font-size: 10px;
+      color: var(--accent);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
     .error-msg {
       color: #ef4444; font-size: 12px; margin-top: 6px; display: none; font-weight: 500;
+    }
+
+    /* コピー成功時のトースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 2000;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
     }
 
     /* フッター */
@@ -202,7 +247,7 @@
 </head>
 <body>
 
-  <!-- 上部ヘッダー（ロゴアイコン＋グラデーション） -->
+  <!-- 上部ヘッダー -->
   <header class="header">
     <div class="header-logo">
       <svg class="logo-icon" viewBox="0 0 24 24">
@@ -221,7 +266,7 @@
           <svg viewBox="0 0 24 24"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm10-19L2 7h19L12 3z"/></svg>
           銀行名・金融機関コード
         </label>
-        <input type="text" id="bank-input" placeholder="例: どこも、みずほ、0001" autocomplete="off">
+        <input type="text" id="bank-input" placeholder="銀行名・読み・コードを入力" autocomplete="off">
         <div id="bank-list" class="custom-list"></div>
         <div id="bank-error" class="error-msg">※候補の中から正しい銀行を選択してください</div>
       </div>
@@ -245,13 +290,30 @@
         検索結果
       </div>
       <div class="result-grid">
-        <div class="result-item"><span>銀行コード</span><strong id="res-bank-code">-</strong></div>
-        <div class="result-item"><span>銀行名</span><strong id="res-bank-name">-</strong></div>
-        <div class="result-item"><span>支店コード</span><strong id="res-branch-code">-</strong></div>
-        <div class="result-item"><span>支店名</span><strong id="res-branch-name">-</strong></div>
+        <div class="result-item copyable" onclick="copyToClipboard('res-bank-code', '銀行コード')">
+          <span>銀行コード (タップでコピー)</span>
+          <strong id="res-bank-code">-</strong>
+          <span class="copy-badge">📋 タップ</span>
+        </div>
+        <div class="result-item">
+          <span>銀行名</span>
+          <strong id="res-bank-name">-</strong>
+        </div>
+        <div class="result-item copyable" onclick="copyToClipboard('res-branch-code', '支店コード')">
+          <span>支店コード (タップでコピー)</span>
+          <strong id="res-branch-code">-</strong>
+          <span class="copy-badge">📋 タップ</span>
+        </div>
+        <div class="result-item">
+          <span>支店名</span>
+          <strong id="res-branch-name">-</strong>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- トースト通知用メッセージ -->
+  <div id="toast" class="toast">コピーしました！</div>
 
   <footer class="footer">
     <p style="margin:0;">&copy; Bank Code Finder. All Rights Reserved.</p>
@@ -266,6 +328,27 @@
     function kataToHira(str) { return (str || '').replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60)); }
     function hiraToKata(str) { return (str || '').replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60)); }
     function normalizeStr(str) { return (str || '').normalize('NFKC').toLowerCase(); }
+
+    // クリップボードコピー処理
+    function copyToClipboard(elementId, labelText) {
+      const text = document.getElementById(elementId).textContent;
+      if (!text || text === '-') return;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`${labelText} (${text}) をコピーしました！`);
+      }).catch(err => {
+        console.error('コピー失敗:', err);
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
       const bankInput = document.getElementById('bank-input');
@@ -353,7 +436,7 @@
             }
 
             branchInput.disabled = false;
-            branchInput.placeholder = '支店名またはコードを入力';
+            branchInput.placeholder = '支店名・読み・コードを入力';
             branchInput.focus();
           })
           .catch(err => {
