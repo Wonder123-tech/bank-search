@@ -69,6 +69,14 @@
       font-weight: 400;
     }
 
+    /* 右側エリア（更新日 ＋ 斜めロゴ） */
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
     /* 右上の最終更新日バッジ */
     .update-badge {
       font-size: 11px;
@@ -80,6 +88,25 @@
       border-radius: 20px;
       white-space: nowrap;
       font-weight: 500;
+    }
+
+    /* 透過＆斜めスタイリッシュロゴ */
+    .header-logo-img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      /* 白背景を自動透過（乗算合成） */
+      mix-blend-mode: multiply;
+      /* 斜め配置＋シャドウ */
+      transform: rotate(-12deg) scale(1);
+      filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.2));
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .header-logo-img:hover {
+      transform: rotate(0deg) scale(1.1);
+      filter: drop-shadow(0px 6px 12px rgba(0, 0, 0, 0.3));
     }
 
     /* メインコンテンツエリア */
@@ -263,14 +290,17 @@
 </head>
 <body>
 
-  <!-- 上部ヘッダー -->
+  <!-- 上部ヘッダー（更新日の直下に斜め透過ロゴ） -->
   <header class="header">
     <div class="header-inner">
       <div class="header-content">
         <h1 class="header-title">銀行・支店コード検索</h1>
         <div class="header-sub">金融機関コード・支店番号を検索</div>
       </div>
-      <div class="update-badge">更新日: 2026.09.08</div>
+      <div class="header-right">
+        <div class="update-badge">更新日: 2026.09.08</div>
+        <img src="./logo.jpg" alt="Logo" class="header-logo-img">
+      </div>
     </div>
   </header>
 
