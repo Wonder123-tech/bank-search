@@ -46,13 +46,13 @@
       position: relative;
     }
 
-    /* 3カラム構成（左:空き / 中央:タイトルと更新日 / 右:ロゴ） */
+    /* 3カラム構成（ロゴサイズに合わせて左右幅を75pxに調整） */
     .header-inner {
       max-width: 100%;
       margin: 0 auto;
       padding: 0 4px;
       display: grid;
-      grid-template-columns: 44px 1fr 44px; /* 左右の幅を揃えて中央を完全中心にする */
+      grid-template-columns: 75px 1fr 75px; /* 左右の幅をロゴに合わせて75pxで均等配置 */
       align-items: center;
     }
 
@@ -88,15 +88,15 @@
       font-weight: 500;
     }
 
-    /* 右端に配置するロゴ（左7度傾け ＋ 下部グラデーションぼかし） */
+    /* 右端に配置するロゴ（サイズ約1.7倍: 75px） */
     .header-right {
       display: flex;
       justify-content: flex-end;
     }
 
     .header-logo-img {
-      width: 44px;
-      height: 44px;
+      width: 75px;  /* 44px * 1.7 ≒ 75px */
+      height: 75px;
       object-fit: contain;
       display: block;
       transform: rotate(-7deg);
