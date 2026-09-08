@@ -3,227 +3,224 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>銀行・支店コード検索</title>
+  <title>Bank Finder - 銀行・支店コード検索</title>
+  <!-- Google Fonts: 高品質フォントの読み込み -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    /* 全体設定 */
+    :root {
+      --primary: #0f172a;       /* メイン濃紺 */
+      --accent: #2563eb;        /* アクセントブルー */
+      --accent-gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      --bg-color: #f1f5f9;      /* 全体背景色 */
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --border-color: #e2e8f0;
+      --focus-ring: rgba(59, 130, 246, 0.25);
+    }
+
     * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f6f9;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* 1. 上部の青ライン＆ヘッダー */
-    .header {
-      background-color: #007bff; /* 青色のヘッダー */
-      color: #ffffff;
-      padding: 15px 20px;
-      text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
     
+    body {
+      font-family: 'Inter', 'Noto Sans JP', -apple-system, sans-serif;
+      margin: 0; padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex; flex-direction: column; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 1. 高品位グラデーションヘッダー */
+    .header {
+      background: var(--accent-gradient);
+      color: #ffffff;
+      padding: 24px 20px 30px;
+      text-align: center;
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+      box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25);
+    }
+
     .header-logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; margin-bottom: 6px;
     }
 
-    /* ロゴ画像がある場合はこちらを適用 (logo.png) */
-    .header-logo img {
-      max-height: 32px;
-      width: auto;
-      display: none; /* 画像を配置したら display: inline-block に変更、または自動判定 */
+    /* ロゴマーク (SVGアイコン) */
+    .logo-icon {
+      width: 28px; height: 28px; fill: #ffffff;
     }
 
-    /* ロゴテキスト（文字ロゴ） */
     .header-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin: 0;
-      letter-spacing: 1px;
+      font-size: 22px; font-weight: 700; margin: 0;
+      letter-spacing: 0.5px;
     }
 
-    /* メインコンテンツエリア（スマホ表示に最適化） */
+    .header-sub {
+      font-size: 12px; color: rgba(255, 255, 255, 0.8);
+      margin-top: 4px; font-weight: 400;
+    }
+
+    /* メインコンテンツエリア */
     .container {
       flex: 1;
-      padding: 20px 15px;
-      max-width: 500px;
-      width: 100%;
-      margin: 0 auto;
+      padding: 0 16px 30px;
+      max-width: 460px; width: 100%;
+      margin: -20px auto 0; /* ヘッダーに少し重ねてカード感を強調 */
     }
 
+    /* カードデザイン */
     .card {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      background: var(--card-bg);
+      padding: 24px 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.8);
       margin-bottom: 20px;
     }
 
     .form-group {
-      margin-bottom: 20px;
-      position: relative;
+      margin-bottom: 20px; position: relative;
     }
 
     label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
-      color: #444;
-      font-size: 15px;
+      display: flex; align-items: center; gap: 6px;
+      font-weight: 700; margin-bottom: 8px;
+      color: var(--text-main); font-size: 14px;
     }
 
-    /* スマホで押しやすい大きな入力エリア */
+    label svg {
+      width: 16px; height: 16px; fill: var(--accent);
+    }
+
+    /* スマホで打ちやすい洗練された入力フォーム */
     input {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px; /* スマホで勝手にズームされないように16px以上 */
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%; padding: 14px 16px;
+      font-size: 16px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
+      background-color: #f8fafc;
+      color: var(--text-main);
+      transition: all 0.2s ease;
       -webkit-appearance: none;
     }
 
     input:focus {
-      border-color: #007bff;
-      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+      border-color: #3b82f6;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 4px var(--focus-ring);
       outline: none;
     }
 
     input:disabled {
-      background-color: #e9ecef;
-      color: #6c757d;
+      background-color: #f1f5f9;
+      color: #94a3b8;
+      border-color: #e2e8f0;
       cursor: not-allowed;
     }
-    
-    /* ドロップダウン候補（スマホタッチ対応） */
+
+    /* タッチ操作しやすいカスタムドロップダウン */
     .custom-list {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
       background: #ffffff;
-      border: 1px solid #007bff;
-      border-radius: 0 0 8px 8px;
-      max-height: 220px;
-      overflow-y: auto;
-      z-index: 1000;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      max-height: 240px; overflow-y: auto; z-index: 1000;
+      box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.15);
       display: none;
     }
 
     .custom-item {
-      padding: 14px; /* タッチしやすいように少し広めに設定 */
-      cursor: pointer;
-      border-bottom: 1px solid #f0f0f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 15px;
+      padding: 14px 16px; cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 15px; font-weight: 500;
+      transition: background 0.15s ease;
     }
 
-    .custom-item:last-child {
-      border-bottom: none;
-    }
-
+    .custom-item:last-child { border-bottom: none; }
     .custom-item:active, .custom-item:hover {
-      background-color: #eef9ff;
+      background-color: #eff6ff; color: var(--accent);
     }
 
     .custom-item .code {
-      color: #007bff;
-      font-weight: bold;
-      font-size: 14px;
+      color: var(--accent);
+      font-weight: 700; font-size: 13px;
+      background: #dbeafe; padding: 2px 8px; border-radius: 6px;
     }
 
-    /* 検索結果カード */
+    /* 結果カード */
     .result-card {
       background: #ffffff;
-      border: 2px solid #007bff;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 20px;
       display: none;
-      box-shadow: 0 4px 12px rgba(0,123,255,0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      border: 2px solid #3b82f6;
     }
 
-    .result-card h3 {
-      margin-top: 0;
-      color: #007bff;
-      border-bottom: 2px solid #eef9ff;
-      padding-bottom: 10px;
-      font-size: 18px;
-      text-align: center;
+    .result-header {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      color: var(--accent); font-weight: 700; font-size: 16px;
+      padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; margin-bottom: 16px;
     }
 
     .result-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 15px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
     }
 
     .result-item {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #e9ecef;
-      text-align: center;
+      background: #f8fafc; padding: 12px;
+      border-radius: 10px; border: 1px solid #f1f5f9; text-align: center;
     }
 
     .result-item span {
-      display: block;
-      font-size: 12px;
-      color: #6c757d;
-      margin-bottom: 4px;
+      display: block; font-size: 11px; color: var(--text-sub);
+      margin-bottom: 4px; font-weight: 500;
     }
 
     .result-item strong {
-      font-size: 16px;
-      color: #212529;
-      word-break: break-all;
+      font-size: 15px; color: var(--text-main); font-weight: 700; word-break: break-all;
     }
 
     .error-msg {
-      color: #dc3545;
-      font-size: 13px;
-      margin-top: 6px;
-      display: none;
+      color: #ef4444; font-size: 12px; margin-top: 6px; display: none; font-weight: 500;
     }
 
-    /* 2. 下部の青ライン＆フッター */
+    /* フッター */
     .footer {
-      background-color: #007bff;
-      color: #ffffff;
+      background-color: var(--primary);
+      color: #94a3b8;
       text-align: center;
-      padding: 15px;
-      font-size: 13px;
+      padding: 20px;
+      font-size: 12px;
       margin-top: auto;
     }
   </style>
 </head>
 <body>
 
-  <!-- 上部ヘッダー（青ライン＋ロゴ） -->
+  <!-- 上部ヘッダー（ロゴアイコン＋グラデーション） -->
   <header class="header">
     <div class="header-logo">
-      <!-- ロゴ画像を使う場合は以下の onerror などを外して使えます -->
-      <!-- <img src="./logo.png" alt="Logo"> -->
-      <h1 class="header-title">🏦 銀行・支店コード検索</h1>
+      <svg class="logo-icon" viewBox="0 0 24 24">
+        <path d="M11.5 1L2 6v2h19V6l-9.5-5zm-7 8v9h3V9h-3zm5 0v9h3V9h-3zm5 0v9h3V9h-3zm5 0v9h3V9h-3zM2 20v2h19v-2H2z"/>
+      </svg>
+      <h1 class="header-title">Bank Code Finder</h1>
     </div>
+    <div class="header-sub">金融機関・支店コード即時検索サービス</div>
   </header>
 
-  <!-- メインコンテンツ -->
   <div class="container">
     <div class="card">
       <!-- 1. 銀行選択 -->
       <div class="form-group">
-        <label for="bank-input">銀行名・コード</label>
+        <label for="bank-input">
+          <svg viewBox="0 0 24 24"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm10-19L2 7h19L12 3z"/></svg>
+          銀行名・金融機関コード
+        </label>
         <input type="text" id="bank-input" placeholder="例: どこも、みずほ、0001" autocomplete="off">
         <div id="bank-list" class="custom-list"></div>
         <div id="bank-error" class="error-msg">※候補の中から正しい銀行を選択してください</div>
@@ -231,40 +228,33 @@
 
       <!-- 2. 支店選択 -->
       <div class="form-group">
-        <label for="branch-input">支店名・コード</label>
+        <label for="branch-input">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          支店名・支店コード
+        </label>
         <input type="text" id="branch-input" placeholder="まず銀行を選択してください" autocomplete="off" disabled>
         <div id="branch-list" class="custom-list"></div>
         <div id="branch-error" class="error-msg">※候補の中から正しい支店を選択してください</div>
       </div>
     </div>
 
-    <!-- 3. 結果表示 -->
+    <!-- 3. 検索結果表示 -->
     <div id="result" class="result-card">
-      <h3>検索結果</h3>
+      <div class="result-header">
+        <svg style="width:20px;height:20px;fill:#2563eb;" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        検索結果
+      </div>
       <div class="result-grid">
-        <div class="result-item">
-          <span>銀行コード</span>
-          <strong id="res-bank-code">-</strong>
-        </div>
-        <div class="result-item">
-          <span>銀行名</span>
-          <strong id="res-bank-name">-</strong>
-        </div>
-        <div class="result-item">
-          <span>支店コード</span>
-          <strong id="res-branch-code">-</strong>
-        </div>
-        <div class="result-item">
-          <span>支店名</span>
-          <strong id="res-branch-name">-</strong>
-        </div>
+        <div class="result-item"><span>銀行コード</span><strong id="res-bank-code">-</strong></div>
+        <div class="result-item"><span>銀行名</span><strong id="res-bank-name">-</strong></div>
+        <div class="result-item"><span>支店コード</span><strong id="res-branch-code">-</strong></div>
+        <div class="result-item"><span>支店名</span><strong id="res-branch-name">-</strong></div>
       </div>
     </div>
   </div>
 
-  <!-- 下部フッター（青ライン） -->
   <footer class="footer">
-    <p style="margin:0;">&copy; 銀行・支店コード検索 All Rights Reserved.</p>
+    <p style="margin:0;">&copy; Bank Code Finder. All Rights Reserved.</p>
   </footer>
 
   <script>
@@ -273,26 +263,18 @@
     let selectedBank = null;
     let selectedBranch = null;
 
-    function kataToHira(str) {
-      return (str || '').replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
-    }
-    function hiraToKata(str) {
-      return (str || '').replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60));
-    }
-    function normalizeStr(str) {
-      return (str || '').normalize('NFKC').toLowerCase();
-    }
+    function kataToHira(str) { return (str || '').replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60)); }
+    function hiraToKata(str) { return (str || '').replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60)); }
+    function normalizeStr(str) { return (str || '').normalize('NFKC').toLowerCase(); }
 
     document.addEventListener('DOMContentLoaded', () => {
       const bankInput = document.getElementById('bank-input');
       const bankList = document.getElementById('bank-list');
       const bankError = document.getElementById('bank-error');
-
       const branchInput = document.getElementById('branch-input');
       const branchList = document.getElementById('branch-list');
       const branchError = document.getElementById('branch-error');
 
-      // 1. bank.json の読み込み
       fetch('./bank.json')
         .then(res => res.json())
         .then(data => {
@@ -301,9 +283,7 @@
             const name = b.name || b;
             const kana = b.kana || b.hiragana || '';
             return {
-              code,
-              name,
-              kana,
+              code, name, kana,
               normName: normalizeStr(name),
               normKana: normalizeStr(kana),
               normHira: kataToHira(normalizeStr(kana || name)),
@@ -313,16 +293,11 @@
         })
         .catch(err => console.error('bank.json 読み込み失敗:', err));
 
-      // 銀行入力検索
       bankInput.addEventListener('input', () => {
         const val = bankInput.value.trim();
         bankError.style.display = 'none';
         resetBranch();
-        
-        if (!val) {
-          bankList.style.display = 'none';
-          return;
-        }
+        if (!val) { bankList.style.display = 'none'; return; }
 
         const normK = normalizeStr(val);
         const kHira = kataToHira(normK);
@@ -345,7 +320,6 @@
         });
       });
 
-      // 2. 支店データ読み込み
       function loadBranches(bankCode) {
         branchInput.disabled = true;
         branchInput.placeholder = '支店データを読み込み中...';
@@ -361,9 +335,7 @@
             const parseBranch = (code, name, kana) => {
               const k = kana || '';
               return {
-                code,
-                name,
-                kana: k,
+                code, name, kana: k,
                 normName: normalizeStr(name),
                 normKana: normalizeStr(k),
                 normHira: kataToHira(normalizeStr(k || name)),
@@ -390,16 +362,11 @@
           });
       }
 
-      // 支店入力検索
       branchInput.addEventListener('input', () => {
         const val = branchInput.value.trim();
         branchError.style.display = 'none';
         hideResult();
-
-        if (!val) {
-          branchList.style.display = 'none';
-          return;
-        }
+        if (!val) { branchList.style.display = 'none'; return; }
 
         const normK = normalizeStr(val);
         const kHira = kataToHira(normK);
@@ -422,33 +389,23 @@
         });
       });
 
-      // リスト描画
       function renderCustomList(listEl, items, onSelect) {
         listEl.innerHTML = '';
-        if (items.length === 0) {
-          listEl.style.display = 'none';
-          return;
-        }
+        if (items.length === 0) { listEl.style.display = 'none'; return; }
 
         items.slice(0, 30).forEach(item => {
           const div = document.createElement('div');
           div.className = 'custom-item';
-          div.innerHTML = `<span>${item.name}</span> <span class="code">[${item.code}]</span>`;
+          div.innerHTML = `<span>${item.name}</span> <span class="code">${item.code}</span>`;
           div.addEventListener('click', () => onSelect(item));
           listEl.appendChild(div);
         });
-
         listEl.style.display = 'block';
       }
 
-      // 画面外クリックでリスト閉じる
       document.addEventListener('click', (e) => {
-        if (!bankInput.contains(e.target) && !bankList.contains(e.target)) {
-          bankList.style.display = 'none';
-        }
-        if (!branchInput.contains(e.target) && !branchList.contains(e.target)) {
-          branchList.style.display = 'none';
-        }
+        if (!bankInput.contains(e.target) && !bankList.contains(e.target)) { bankList.style.display = 'none'; }
+        if (!branchInput.contains(e.target) && !branchList.contains(e.target)) { branchList.style.display = 'none'; }
       });
 
       function resetBranch() {
@@ -472,9 +429,7 @@
         }
       }
 
-      function hideResult() {
-        document.getElementById('result').style.display = 'none';
-      }
+      function hideResult() { document.getElementById('result').style.display = 'none'; }
     });
   </script>
 </body>
