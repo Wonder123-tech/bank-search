@@ -45,11 +45,12 @@
     }
 
     .header-inner {
-      max-width: 500px;
+      max-width: 100%;           /* 500pxの幅制限を解除 */
       margin: 0 auto;
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      justify-content: space-between; /* 左端と右端に振り分け */
+      align-items: center;       /* 上下中央揃え */
+      padding: 0 10px;           /* 画面の端からの微調整（余白） */
     }
 
     .header-content {
