@@ -44,13 +44,18 @@
       position: relative;
     }
 
-    .header-inner {
-      max-width: 100%;           /* 500pxの幅制限を解除 */
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between; /* 左端と右端に振り分け */
-      align-items: center;       /* 上下中央揃え */
-      padding: 0 10px;           /* 画面の端からの微調整（余白） */
+    .header-logo-img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      display: block;
+
+      /* 左に7度傾ける */
+      transform: rotate(-7deg);
+
+      /* 下に向かってふんわり消えるグラデーションぼかし（透過） */
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
     }
 
     .header-content {
